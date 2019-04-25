@@ -1,0 +1,11 @@
+- name: Check variables
+  assert:
+    that:
+      - services is defined
+      - service_name is defined
+
+- name: Generate dummy version
+  update_version:
+    service_name: '{{ service_name }}'
+    set:
+      version: 125

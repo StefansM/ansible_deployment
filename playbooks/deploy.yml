@@ -1,0 +1,7 @@
+- name: Deploy services to host.
+  hosts: localhost
+  roles:
+  - retrieve_all
+    #- deploy
+    #- activate_deployment
+

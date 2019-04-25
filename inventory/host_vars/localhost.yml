@@ -1,0 +1,34 @@
+supervisord_dir: /tmp/supervisor
+supervisord_conf:
+  unix_http_server:
+    # the path to the socket file
+    file: '{{ supervisord_dir }}/supervisor.sock'
+
+  supervisord:
+    logfile: '{{ supervisord_dir }}/logs/supervisord.log'
+    pidfile: '{{ supervisord_dir }}/supervisord.pid'
+    childlogdir: '{{ supervisord_dir }}/logs'
+    nodaemon: true
+
+  # Mandatory section
+  'rpcinterface:supervisor':
+    supervisor.rpcinterface_factory: supervisor.rpcinterface:make_main_rpcinterface
+
+  supervisorctl:
+    serverurl: 'unix://{{ supervisord_dir }}/supervisor.sock'
+
+src_dir: /home/stefans/Dropbox/projects/ansible/local_src
+services:
+  test:
+    executable: test.sh
+    args: [1, 2, 3]
+    version: 122
+    version_role: dummy_version
+    retrieve_role: retrieve_local
+    group: foo
+  test2:
+    executable: test.sh
+    args: [4, 5, 6]
+    version: 2
+    retrieve_role: retrieve_local
+    group: foo

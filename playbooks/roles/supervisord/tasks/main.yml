@@ -1,0 +1,14 @@
+- name: Require variables.
+  assert:
+    that:
+      - supervisord_dir is defined
+
+- name: Install supervisord into virtualenv.
+  pip:
+    virtualenv: '{{ supervisord_dir }}/venv'
+    name: supervisor
+
+- name: Generate supervisord configuration file.
+  template:
+    src: supervisord.conf.j2
+    dest: '{{ supervisord_dir }}/supervisord.conf'

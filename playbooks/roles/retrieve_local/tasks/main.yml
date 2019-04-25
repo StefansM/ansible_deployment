@@ -1,0 +1,33 @@
+- name: Check required variables
+  assert:
+    that:
+      - src_dir is defined
+      - services is defined
+      - service_name is defined
+      - service_name in services
+      - '"dest_dir" in services[service_name]'
+      - '"version" in services[service_name]'
+
+- vars:
+    service: '{{ services[service_name] }}'
+    archive_name: '{{ service_name ~ "_" ~ service.version ~ ".tar.gz" }}'
+    archive_path: '{{ [src_dir, service_name, archive_name] | join("/") }}'
+  block:
+  - name: Make destination directory
+    file:
+      path: '{{ service.dest_dir }}'
+      state: directory
+
+  - name: Extract source to deploy root.
+    unarchive:
+      src: '{{ archive_path }}'
+      dest: '{{ service.dest_dir }}'
+    register: unarchive_result
+
+  - name: Check whether service was updated.
+    update_version:
+      services: '{{ services }}'
+      service_name: '{{ service_name }}'
+      set:
+        changed: '{{ unarchive_result.changed }}'
+    changed_when: 'services[service_name].changed'

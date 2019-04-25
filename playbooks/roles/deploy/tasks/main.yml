@@ -1,0 +1,48 @@
+- name: Retrieve service versions.
+  # Loop over all services that define a "version_role"
+  loop: '{{ services | dict2items }}'
+  loop_control:
+    loop_var: service_pair
+  when: '"version_role" in service_pair.value'
+  # Include the "version_role", specifying service_name
+  include_role:
+    name: '{{ service_pair.value.version_role }}'
+  vars:
+    service_name: '{{ service_pair.key }}'
+
+# Sets the prefix (final destination) and dest_dir (destination in deploy_root)
+- name: Initialise service metadata
+  service_metadata:
+    deploy_root: /tmp/deploy_root
+
+- name: Copy services into deploy_root.
+  # Loop over all services that define a "retrieve_role"
+  loop: '{{ services | dict2items }}'
+  loop_control:
+    loop_var: service_pair
+  when: '"retrieve_role" in service_pair.value'
+  # Include the "retrieve_role", specifying service_name
+  include_role:
+    name: '{{ service_pair.value.retrieve_role }}'
+  vars:
+    service_name: '{{ service_pair.key }}'
+
+- name: Run remote post_deploy role.
+  loop: '{{ services | dict2items }}'
+  loop_control:
+    loop_var: service_pair
+  when: '"changed" not in service_pair.value or service_pair.value.changed'
+  include_role:
+    name: 'remote_role'
+  vars:
+    service_name: '{{ service_pair.key }}'
+    role: 'post_deploy'
+
+- name: Atomic deployment.
+  atomic_deploy:
+    deploy_root: /tmp/deploy_root
+    services: '{{ services }}'
+  register: result
+
+- debug:
+    var: result

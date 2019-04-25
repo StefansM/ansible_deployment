@@ -1,0 +1,45 @@
+- name: Check required variables are present.
+  assert:
+    that:
+      - services is defined
+      - service_name is defined
+      - service_name in services
+      - role is defined
+
+- vars:
+    service: '{{ services[service_name] }}'
+    remote_role: '{{ [service.dest_dir, "ansible/roles", role] | join("/") }}'
+  block:
+  - debug:
+      msg: "Checking for presence of remote role `{{ remote_role }}'."
+
+  - name: Check remote role exists.
+    stat:
+      path: '{{ remote_role }}'
+    register: remote_role_stat
+
+  - when: remote_role_stat.stat.exists
+    block:
+    - name: Create local temporary directory.
+      tempfile:
+        prefix: ansible
+        suffix: post_deploy
+        state: directory
+      register: local_role
+
+    - name: Copy remote role to local directory.
+      synchronize:
+        dest: '{{ local_role.path }}'
+        src: '{{ remote_role ~ "/" }}'
+        archive: true
+        mode: pull
+
+    - name: Run remote role.
+      include_role:
+        name: '{{ local_role.path }}'
+
+    always:
+      - name: Delete temporary directory.
+        file:
+          path: '{{ local_role.path }}'
+          state: absent
